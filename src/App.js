@@ -14,7 +14,6 @@ const trimWithIndices = (
   ignoreWhitespaces = false
 ) => {
   if (!text) return { map: [], trimmed: "" };
-  console.log("text", text);
   let map = [];
   let trimmed = "";
   let lastCharWasIgnored = false;
