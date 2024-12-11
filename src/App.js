@@ -1,5 +1,5 @@
 import { diffWords } from "diff";
-import './App.scss';
+import "./App.scss";
 import React, { useState } from "react";
 
 const replaceTabsWithSpaces = (text, spacesPerTab = 1) => {
@@ -44,10 +44,19 @@ const trimWithIndices = (
 function App() {
   const [text1, setText1] = useState("");
   const [text2, setText2] = useState("");
+  const [textBoth, setTextBoth] = useState("");
+  const [useTextBoth, setUseTextBoth] = useState(false);
   const [ignoreNewlines, setIgnoreNewlines] = useState(true);
   const [ignoreWhitespaces, setIgnoreWhitespaces] = useState(true);
   const [replaceTabs, setReplaceTabs] = useState(true);
   const [result, setResult] = useState(null);
+
+  const onChangeBoth = (e) => {
+    setTextBoth(e.target.value);
+    const texts = e.target.value.split("=======");
+    setText1(texts[0]);
+    setText2(texts[1]);
+  };
 
   const compareTexts = () => {
     const { map: map1, trimmed: trimmed1 } = trimWithIndices(
@@ -92,17 +101,24 @@ function App() {
         let newIndexFirst = lastIndexFirst + difference.value.length;
         let newIndexSecond = lastIndexSecond + difference.value.length;
 
-        const origPartFirst = text1.slice(
-          map1[lastIndexFirst][0],
-          map1[newIndexFirst - 1][0] + 1
-        );
-        const origPartSecond = text2.slice(
-          map2[lastIndexSecond][0],
-          map2[newIndexSecond - 1][0] + 1
-        );
+        let origPartFirst = "";
+        let origPartSecond = "";
 
-        lastIndexFirst = newIndexFirst;
-        lastIndexSecond = newIndexSecond;
+        if (map1[lastIndexFirst] && map1[newIndexFirst - 1]) {
+          origPartFirst = text1.slice(
+            map1[lastIndexFirst][0],
+            map1[newIndexFirst - 1][0] + 1
+          );
+          lastIndexFirst = newIndexFirst;
+        }
+
+        if (map2[lastIndexSecond] && map2[newIndexSecond - 1]) {
+          origPartSecond = text2.slice(
+            map2[lastIndexSecond][0],
+            map2[newIndexSecond - 1][0] + 1
+          );
+          lastIndexSecond = newIndexSecond;
+        }
 
         difference.value = origPartFirst; // Or origPartSecond — they are identical here
         difference.secondValue = origPartSecond;
@@ -125,7 +141,9 @@ function App() {
     const rightSide = result.map((part, index) => (
       <span key={`right-${index}`} className={part.added ? "added" : ""}>
         {!part.removed &&
-          (replaceTabs ? replaceTabsWithSpaces(part.secondValue || part.value) : (part.secondValue || part.value))}
+          (replaceTabs
+            ? replaceTabsWithSpaces(part.secondValue || part.value)
+            : part.secondValue || part.value)}
       </span>
     ));
 
@@ -140,20 +158,53 @@ function App() {
   return (
     <div className="container">
       <title>Text Comparison Tool</title>
-      <meta name="description" content="Use it to find real differences without getting distracted by newlines, tabs or spaces" />
+      <meta
+        name="description"
+        content="Use it to find real differences without getting distracted by newlines, tabs or spaces"
+      />
       <h1>Text Comparison Tool</h1>
-      <div className="inputs">
-        <textarea
-          value={text1}
-          onChange={(e) => setText1(e.target.value)}
-          placeholder="Enter first text"
-        />
-        <textarea
-          value={text2}
-          onChange={(e) => setText2(e.target.value)}
-          placeholder="Enter second text"
-        />
+      <div className="options">
+        <label>
+          <input
+            type="radio"
+            checked={!useTextBoth}
+            onChange={() => setUseTextBoth(false)}
+          />
+          Enter each text separately
+        </label>
+        <br />
+        <label>
+          <input
+            type="radio"
+            checked={useTextBoth}
+            onChange={() => setUseTextBoth(true)}
+          />
+          Or enter both text at once, delimited by "=======" (like in git
+          conflict markup)
+        </label>
       </div>
+      {useTextBoth ? (
+        <div className="inputs">
+          <textarea
+            value={textBoth}
+            onChange={onChangeBoth}
+            placeholder="Enter both texts"
+          />
+        </div>
+      ) : (
+        <div className="inputs">
+          <textarea
+            value={text1}
+            onChange={(e) => setText1(e.target.value)}
+            placeholder="Enter first text"
+          />
+          <textarea
+            value={text2}
+            onChange={(e) => setText2(e.target.value)}
+            placeholder="Enter second text"
+          />
+        </div>
+      )}
       <div className="options">
         <label>
           <input
