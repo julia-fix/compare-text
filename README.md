@@ -1,5 +1,7 @@
 # Compare Text
 
+[Try it here](https://julia-fix.github.io/compare-text/)
+
 ## App Purpose
 
 Comparing two texts for differences, might be useful to resolve git conflicts. There are many other tools like this, but I decided to create this one to have an option to ignore whitespaces or line breaks.
