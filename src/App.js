@@ -1,6 +1,7 @@
+
 import { diffWords } from "diff";
 import "./App.scss";
-import React, { useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 
 const replaceTabsWithSpaces = (text, spacesPerTab = 1) => {
   const spaces = " ".repeat(spacesPerTab); // Generate the replacement spaces
@@ -27,7 +28,7 @@ const trimWithIndices = (
     ) {
       if (!lastCharWasIgnored && trimmed.length > 0) {
         trimmed += " ";
-        map.push([i, trimmed.length - 1]); // Map this space to the original index
+        map.push([i, trimmed.length - 1]);
       }
       lastCharWasIgnored = true;
       continue;
@@ -38,6 +39,8 @@ const trimWithIndices = (
     lastCharWasIgnored = false;
   }
 
+  // map is a list of pairs: [index in original text, index in trimmed text]
+  console.log(map);
   return { map, trimmed };
 };
 
@@ -47,9 +50,35 @@ function App() {
   const [textBoth, setTextBoth] = useState("");
   const [useTextBoth, setUseTextBoth] = useState(false);
   const [ignoreNewlines, setIgnoreNewlines] = useState(true);
-  const [ignoreWhitespaces, setIgnoreWhitespaces] = useState(true);
+  const [ignoreWhitespaces, setIgnoreWhitespaces] = useState(false);
   const [replaceTabs, setReplaceTabs] = useState(true);
   const [result, setResult] = useState(null);
+  const isInited = useRef(false);
+
+  //save settings and input
+  useEffect(() => {
+    console.log('useEffect', ignoreWhitespaces);
+    if (!isInited.current) return;
+    localStorage.setItem('ignoreNewlines', ignoreNewlines);
+    localStorage.setItem('ignoreWhitespaces', ignoreWhitespaces);
+    localStorage.setItem('replaceTabs', replaceTabs);
+    localStorage.setItem('useTextBoth', useTextBoth);
+    localStorage.setItem('textBoth', textBoth);
+    localStorage.setItem('text1', text1);
+    localStorage.setItem('text2', text2);
+  }, [ignoreWhitespaces, ignoreNewlines, replaceTabs, text1, text2, textBoth, useTextBoth]);
+
+  useEffect(() => {
+    if (isInited.current) return;
+    setIgnoreNewlines(localStorage.getItem('ignoreNewlines') === 'true');
+    setIgnoreWhitespaces(localStorage.getItem('ignoreWhitespaces') === 'true');
+    setReplaceTabs(localStorage.getItem('replaceTabs') === 'true');
+    setText1(localStorage.getItem('text1') || '');
+    setText2(localStorage.getItem('text2') || '');
+    setTextBoth(localStorage.getItem('textBoth') || '');
+    setUseTextBoth(localStorage.getItem('useTextBoth') === 'true');
+    isInited.current = true;
+  }, []);
 
   const onChangeBoth = (e) => {
     setTextBoth(e.target.value);
@@ -72,6 +101,10 @@ function App() {
 
     // Compute differences on trimmed texts
     const differences = diffWords(trimmed1, trimmed2);
+    
+    let clonedArray = JSON.parse(JSON.stringify(differences))
+    console.log('clonedArray', clonedArray);
+    console.log('differences', differences);
 
     // Map differences back to original texts
     let lastIndexFirst = 0;
@@ -83,44 +116,71 @@ function App() {
         let newIndexSecond = lastIndexSecond + difference.value.length;
         const origPart = text2.slice(
           map2[lastIndexSecond][0],
-          map2[newIndexSecond - 1][0] + 1
+          map2[newIndexSecond] ? map2[newIndexSecond][0] : map2[newIndexSecond - 1][0] + 1
         );
         lastIndexSecond = newIndexSecond;
         difference.value = origPart;
       } else if (difference.removed) {
         // Handle removed text (from text1)
         let newIndexFirst = lastIndexFirst + difference.value.length;
+        console.log('map1[lastIndexFirst]', map1[lastIndexFirst]);
+        console.log('map1[newIndexFirst - 1]', map1[newIndexFirst - 1]);
+        try {
         const origPart = text1.slice(
           map1[lastIndexFirst][0],
-          map1[newIndexFirst - 1][0] + 1
+          map1[newIndexFirst] ? map1[newIndexFirst][0] : map1[newIndexFirst - 1][0] + 1
         );
         lastIndexFirst = newIndexFirst;
         difference.value = origPart;
+      } catch (error) {
+        console.log('lastIndexFirst', lastIndexFirst);
+        if (map1[lastIndexFirst]) {
+          const origPart = text1.slice(map1[lastIndexFirst][0]);
+          lastIndexFirst = text1.length;
+          difference.value = origPart;
+        } else {
+          const origPart = '';
+          lastIndexFirst = text1.length;
+          difference.value = origPart;
+        }
+       
+      }
+      
       } else {
         // Handle unchanged text
-        let newIndexFirst = lastIndexFirst + difference.value.length;
+       // let newIndexFirst = lastIndexFirst + difference.value.length;
+       let newIndexFirst = lastIndexFirst + difference.value.length;
         let newIndexSecond = lastIndexSecond + difference.value.length;
 
         let origPartFirst = "";
         let origPartSecond = "";
 
         if (map1[lastIndexFirst] && map1[newIndexFirst - 1]) {
+          
           origPartFirst = text1.slice(
             map1[lastIndexFirst][0],
-            map1[newIndexFirst - 1][0] + 1
+            map1[newIndexFirst] ? map1[newIndexFirst][0] : map1[newIndexFirst - 1][0] + 1
           );
           lastIndexFirst = newIndexFirst;
+        } 
+        else {
+          origPartFirst = text1.slice(map1[lastIndexFirst][0]);
+          lastIndexFirst = text1.length;
         }
 
         if (map2[lastIndexSecond] && map2[newIndexSecond - 1]) {
           origPartSecond = text2.slice(
             map2[lastIndexSecond][0],
-            map2[newIndexSecond - 1][0] + 1
+            map2[newIndexSecond] ? map2[newIndexSecond][0] : map2[newIndexSecond - 1][0] + 1
           );
           lastIndexSecond = newIndexSecond;
+        } 
+        else {
+          origPartSecond = text2.slice(map2[lastIndexSecond][0]);
+          lastIndexSecond = text2.length;
         }
 
-        difference.value = origPartFirst; // Or origPartSecond — they are identical here
+        difference.value = origPartFirst; 
         difference.secondValue = origPartSecond;
       }
     });
@@ -130,7 +190,7 @@ function App() {
 
   const renderFullTexts = () => {
     if (!result) return null;
-
+    
     const leftSide = result.map((part, index) => (
       <span key={`left-${index}`} className={part.removed ? "removed" : ""}>
         {!part.added &&
@@ -143,7 +203,7 @@ function App() {
         {!part.removed &&
           (replaceTabs
             ? replaceTabsWithSpaces(part.secondValue || part.value)
-            : part.secondValue || part.value)}
+            : (part.secondValue || part.value))}
       </span>
     ));
 
