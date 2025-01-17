@@ -7,11 +7,20 @@ body {
 
 .container {
   max-width: 1600px;
-  margin: 50px auto;
+  margin: 20px auto;
   padding: 20px;
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  @media (max-width: 1640px) {
+    margin-left: 20px;
+    margin-right: 20px;
+  }
+  @media (max-width: 600px) {
+    margin-left: 0;
+    margin-right: 0;
+    border-radius: 0;
+  }
 }
 
 h1 {
@@ -108,5 +117,21 @@ button {
     .column {
       width: 100%;
     }
+  }
+}
+
+.source {
+  text-align: center;
+  margin-top: 20px;
+  a {
+    text-decoration: none;
+    color: #333;
+    font-weight: bold;
+  }
+  img {
+    width: 30px;
+    height: 30px;
+    margin:  0 12px 0 0;
+    vertical-align: middle;
   }
 }

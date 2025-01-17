@@ -40,7 +40,6 @@ const trimWithIndices = (
   }
 
   // map is a list of pairs: [index in original text, index in trimmed text]
-  console.log(map);
   return { map, trimmed };
 };
 
@@ -57,7 +56,6 @@ function App() {
 
   //save settings and input
   useEffect(() => {
-    console.log('useEffect', ignoreWhitespaces);
     if (!isInited.current) return;
     localStorage.setItem('ignoreNewlines', ignoreNewlines);
     localStorage.setItem('ignoreWhitespaces', ignoreWhitespaces);
@@ -102,9 +100,9 @@ function App() {
     // Compute differences on trimmed texts
     const differences = diffWords(trimmed1, trimmed2);
     
-    let clonedArray = JSON.parse(JSON.stringify(differences))
-    console.log('clonedArray', clonedArray);
-    console.log('differences', differences);
+    // let clonedArray = JSON.parse(JSON.stringify(differences))
+    // console.log('clonedArray', clonedArray);
+    // console.log('differences', differences);
 
     // Map differences back to original texts
     let lastIndexFirst = 0;
@@ -123,8 +121,7 @@ function App() {
       } else if (difference.removed) {
         // Handle removed text (from text1)
         let newIndexFirst = lastIndexFirst + difference.value.length;
-        console.log('map1[lastIndexFirst]', map1[lastIndexFirst]);
-        console.log('map1[newIndexFirst - 1]', map1[newIndexFirst - 1]);
+        
         try {
         const origPart = text1.slice(
           map1[lastIndexFirst][0],
@@ -133,7 +130,7 @@ function App() {
         lastIndexFirst = newIndexFirst;
         difference.value = origPart;
       } catch (error) {
-        console.log('lastIndexFirst', lastIndexFirst);
+        
         if (map1[lastIndexFirst]) {
           const origPart = text1.slice(map1[lastIndexFirst][0]);
           lastIndexFirst = text1.length;
@@ -216,6 +213,10 @@ function App() {
   };
 
   return (
+    <>
+    <div className="source">
+     <a href="https://github.com/julia-fix/compare-text/tree/master"><img src={process.env.PUBLIC_URL + '/github.svg'} alt="GitHub" />Source</a>
+    </div>
     <div className="container">
       <title>Text Comparison Tool</title>
       <meta
@@ -296,6 +297,7 @@ function App() {
       <button onClick={compareTexts}>Compare</button>
       {renderFullTexts()}
     </div>
+    </>
   );
 }
 
